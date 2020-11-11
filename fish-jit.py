@@ -91,61 +91,61 @@ def mainloop(program, col_max, row_max):
       stack.append(fromint(NOUNS[code]))
 
     elif code in DYADICS:
-      (c, d), (a, b), o = stack.pop(), stack.pop(), ZERO
-      if   code ==  37:
-        c = a.mul(d).div(b.mul(c)).mul(c)
-        o = (a.mul(d).sub(b.mul(c)), b.mul(d))
-      elif code ==  42: o = (a.mul(c), b.mul(d))
-      elif code ==  43: o = (a.mul(d).add(b.mul(c)), b.mul(d))
-      elif code ==  44: o = (a.mul(d), b.mul(c))
-      elif code ==  45: o = (a.mul(d).sub(b.mul(c)), b.mul(d))
-      elif code ==  40: o = frombool(a.mul(d).lt(b.mul(c)))
-      elif code ==  41: o = frombool(a.mul(d).gt(b.mul(c)))
-      elif code ==  61: o = frombool(a.mul(d).eq(b.mul(c)))
-      if o[1].int_ne(1):
-        o = normalize(o)
-      stack.append(o)
+      try:
+        (c, d), (a, b), o = stack.pop(), stack.pop(), ZERO
+        if   code ==  37:
+          c = a.mul(d).div(b.mul(c)).mul(c)
+          o = (a.mul(d).sub(b.mul(c)), b.mul(d))
+        elif code ==  42: o = (a.mul(c), b.mul(d))
+        elif code ==  43: o = (a.mul(d).add(b.mul(c)), b.mul(d))
+        elif code ==  44: o = (a.mul(d), b.mul(c))
+        elif code ==  45: o = (a.mul(d).sub(b.mul(c)), b.mul(d))
+        elif code ==  40: o = frombool(a.mul(d).lt(b.mul(c)))
+        elif code ==  41: o = frombool(a.mul(d).gt(b.mul(c)))
+        elif code ==  61: o = frombool(a.mul(d).eq(b.mul(c)))
+        if o[1].int_ne(1):
+          o = normalize(o)
+        stack.append(o)
+      except:
+        raise
 
     elif code in STACKS:
       stacklen = len(stack)
-      if   code ==  36:
-        assert(stacklen >= 2)
-        a, b = stack.pop(), stack.pop()
-        stack.extend([a, b])
-      elif code ==  58:
-        assert(stacklen >= 1)
-        stack.append(stack[stacklen-1])
-      elif code ==  64:
-        assert(stacklen >= 3)
-        a, b, c = stack.pop(), stack.pop(), stack.pop()
-        stack.extend([a, c, b])
-      elif code ==  91:
-        assert(stacklen >= 1)
-        n = toint(stack.pop())
-        i = stacklen - n - 1
-        assert(i >= 0)
-        stacks.append(stack[:i])
-        stack = stack[i:]
-        registers.append((register, has_register))
-        register = ZERO
-        has_register = False
-      elif code ==  93:
-        assert(len(stacks) >= 1)
-        stack = stacks.pop() + stack
-        register, has_register = registers.pop()
-      elif code == 108: stack.append(fromint(stacklen))
-      elif code == 114: stack.reverse()
-      elif code == 123:
-        assert(stacklen >= 1)
-        a = stack.pop(0)
-        stack.append(a)
-      elif code == 125:
-        assert(stacklen >= 1)
-        a = stack.pop()
-        stack.insert(0, a)
-      elif code == 126:
-        assert(stacklen >= 1)
-        stack.pop()
+      try:
+        if   code ==  36:
+          a, b = stack.pop(), stack.pop()
+          stack.extend([a, b])
+        elif code ==  58:
+          stack.append(stack[stacklen-1])
+        elif code ==  64:
+          a, b, c = stack.pop(), stack.pop(), stack.pop()
+          stack.extend([a, c, b])
+        elif code ==  91:
+          n = toint(stack.pop())
+          i = stacklen - n - 1
+          if i >= 0:
+            stacks.append(stack[:i])
+            stack = stack[i:]
+            registers.append((register, has_register))
+            register = ZERO
+            has_register = False
+          else:
+            raise RuntimeError('Insufficient stack')
+        elif code ==  93:
+          stack = stacks.pop() + stack
+          register, has_register = registers.pop()
+        elif code == 108: stack.append(fromint(stacklen))
+        elif code == 114: stack.reverse()
+        elif code == 123:
+          a = stack.pop(0)
+          stack.append(a)
+        elif code == 125:
+          a = stack.pop()
+          stack.insert(0, a)
+        elif code == 126:
+          stack.pop()
+      except:
+        raise
 
     elif code in MIRRORS:
       if   code ==  35: dx, dy = (-dx, -dy)
@@ -161,52 +161,54 @@ def mainloop(program, col_max, row_max):
       elif code == 124: dx, dy = (-dx,  dy)
 
     elif code in CONTROL:
-      if   code ==  33:
-        skip = True
-      elif code ==  38:
-        if has_register:
-          stack.append(register)
-          register = ZERO
-          has_register = False
-        else:
-          register = stack.pop()
-          has_register = True
-      elif code ==  46:
-        pcy, pcx = toint(stack.pop()), toint(stack.pop())
-      elif code ==  59:
-        return
-      elif code ==  63:
-        skip = not tobool(stack.pop())
-      elif code == 103:
-        y, x = toint(stack.pop()), toint(stack.pop())
-        if (x, y) in program:
-          stack.append(fromint(program[(x, y)]))
-        else:
-          stack.append(ZERO)
-      elif code == 105:
-        char = os.read(0, 1)
-        if char:
-          stack.append(fromint(ord(char[0])))
-        else:
-          stack.append(fromint(-1))
-
-      elif code == 110:
-        n = stack.pop()
-        os.write(1, tostr(n))
-      elif code == 111:
-        n = stack.pop()
-        os.write(1, chr(toint(n)))
-      elif code == 112:
-        y, x, v = toint(stack.pop()), toint(stack.pop()), toint(stack.pop())
-        program[(x, y)] = v
-        if x in col_max:
-          col_max[x] = max(col_max[x], y)
-        else:
-          col_max[x] = y
-        if y in row_max:
-          row_max[y] = max(row_max[y], x)
-        else:
-          row_max[y] = x
+      try:
+        if   code ==  33:
+          skip = True
+        elif code ==  38:
+          if has_register:
+            stack.append(register)
+            register = ZERO
+            has_register = False
+          else:
+            register = stack.pop()
+            has_register = True
+        elif code ==  46:
+          pcy, pcx = toint(stack.pop()), toint(stack.pop())
+        elif code ==  59:
+          return
+        elif code ==  63:
+          skip = not tobool(stack.pop())
+        elif code == 103:
+          y, x = toint(stack.pop()), toint(stack.pop())
+          if (x, y) in program:
+            stack.append(fromint(program[(x, y)]))
+          else:
+            stack.append(ZERO)
+        elif code == 105:
+          char = os.read(0, 1)
+          if char:
+            stack.append(fromint(ord(char[0])))
+          else:
+            stack.append(fromint(-1))
+        elif code == 110:
+          n = stack.pop()
+          os.write(1, tostr(n))
+        elif code == 111:
+          n = stack.pop()
+          os.write(1, chr(toint(n)))
+        elif code == 112:
+          y, x, v = toint(stack.pop()), toint(stack.pop()), toint(stack.pop())
+          program[(x, y)] = v
+          if x in col_max:
+            col_max[x] = max(col_max[x], y)
+          else:
+            col_max[x] = y
+          if y in row_max:
+            row_max[y] = max(row_max[y], x)
+          else:
+            row_max[y] = x
+      except:
+        raise
 
     elif code in QUOTES:
       slurp = True
@@ -273,7 +275,7 @@ def main(argv):
   except IndexError:
     os.write(2, 'Usage: %s program.fsh'%argv[0])
     return 1
-  except OSError:
+  except IOError:
     os.write(2, 'File not found: %s'%filename)
     return 1
 
