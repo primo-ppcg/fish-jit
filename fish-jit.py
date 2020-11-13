@@ -4,7 +4,7 @@ from rpython.rlib.jit import JitDriver, elidable
 from rpython.rlib.rbigint import rbigint, ONERBIGINT, NULLRBIGINT
 from rpython.rlib.rfloat import formatd
 from rpython.rlib.rrandom import Random
-from rpython.rlib.rutf8 import unichr_as_utf8
+from rpython.rlib.rutf8 import unichr_as_utf8, codepoint_at_pos
 
 jitdriver = JitDriver(
   greens = ['pcx', 'pcy', 'dx', 'dy'],
@@ -53,6 +53,19 @@ def tobool((a, b)):
 def normalize((a, b)):
   g = a.gcd(b)
   return (a.div(g), b.div(g))
+
+def read_char():
+  char = os.read(0, 1)
+  if char:
+    code = ord(char[0])
+    if code < 0x80:
+      return code
+    elif code < 0xE0:
+      return codepoint_at_pos(char + os.read(0, 1), 0)
+    elif code < 0xF0:
+      return codepoint_at_pos(char + os.read(0, 2), 0)
+    return codepoint_at_pos(char + os.read(0, 3), 0)
+  return -1
 
 
 def mainloop(program, col_max, row_max):
@@ -188,11 +201,7 @@ def mainloop(program, col_max, row_max):
           else:
             stack.append(ZERO)
         elif code == 105:
-          char = os.read(0, 1)
-          if char:
-            stack.append(fromint(ord(char[0])))
-          else:
-            stack.append(fromint(-1))
+          stack.append(fromint(read_char()))
         elif code == 110:
           n = stack.pop()
           os.write(1, tostr(n))
