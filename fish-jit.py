@@ -4,6 +4,7 @@ from rpython.rlib.jit import JitDriver, elidable
 from rpython.rlib.rbigint import rbigint, ONERBIGINT, NULLRBIGINT
 from rpython.rlib.rfloat import formatd
 from rpython.rlib.rrandom import Random
+from rpython.rlib.rutf8 import unichr_as_utf8
 
 jitdriver = JitDriver(
   greens = ['pcx', 'pcy', 'dx', 'dy'],
@@ -98,7 +99,9 @@ def mainloop(program, col_max, row_max):
           o = (a.mul(d).sub(b.mul(c)), b.mul(d))
         elif code ==  42: o = (a.mul(c), b.mul(d))
         elif code ==  43: o = (a.mul(d).add(b.mul(c)), b.mul(d))
-        elif code ==  44: o = (a.mul(d), b.mul(c))
+        elif code ==  44:
+          if c.int_eq(0): raise ZeroDivisionError
+          o = (a.mul(d), b.mul(c))
         elif code ==  45: o = (a.mul(d).sub(b.mul(c)), b.mul(d))
         elif code ==  40: o = frombool(a.mul(d).lt(b.mul(c)))
         elif code ==  41: o = frombool(a.mul(d).gt(b.mul(c)))
@@ -195,7 +198,7 @@ def mainloop(program, col_max, row_max):
           os.write(1, tostr(n))
         elif code == 111:
           n = stack.pop()
-          os.write(1, chr(toint(n)))
+          os.write(1, unichr_as_utf8(toint(n)))
         elif code == 112:
           y, x, v = toint(stack.pop()), toint(stack.pop()), toint(stack.pop())
           program[(x, y)] = v
@@ -250,7 +253,7 @@ def run(source):
   y = 0
   for line in lines:
     x = 0
-    for c in line:
+    for c in line.decode('utf-8'):
       program[(x, y)] = ord(c)
       if x in col_max:
         col_max[x] = max(col_max[x], y)
