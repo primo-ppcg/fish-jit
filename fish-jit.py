@@ -1,10 +1,10 @@
 import os
 
 from rpython.rlib.jit import JitDriver, elidable
-from rpython.rlib.rbigint import rbigint, ONERBIGINT, NULLRBIGINT
-from rpython.rlib.rfloat import formatd
 from rpython.rlib.rrandom import Random
 from rpython.rlib.rutf8 import unichr_as_utf8, codepoint_at_pos
+
+from rbigfrac import rbigfrac, ZERO
 
 jitdriver = JitDriver(
   greens = ['pcx', 'pcy', 'dx', 'dy'],
@@ -22,37 +22,6 @@ MIRRORS = { 35:0, 47:0, 60:0, 62:0, 92:0, 94:0, 95:0,118:0,120:0,124:0 }
 CONTROL = {  0:0, 32:0, 33:0, 38:0, 46:0, 59:0, 63:0,103:0,105:0,110:0,111:0,112:0 }
 QUOTES  = { 34:0, 39:0 }
 
-ZERO = (NULLRBIGINT, ONERBIGINT)
-ONE  = ( ONERBIGINT, ONERBIGINT)
-
-
-@elidable
-def fromint(n):
-  return (rbigint.fromint(n), ONERBIGINT)
-
-@elidable
-def frombool(b):
-  if b: return ONE
-  return ZERO
-
-@elidable
-def toint((a, b)):
-  return a.div(b).toint()
-
-@elidable
-def tostr((a, b)):
-  if b.int_eq(1):
-    return a.str()
-  return formatd(a.tofloat() / b.tofloat(), 'r', 0)
-
-@elidable
-def tobool((a, b)):
-  return a.tobool()
-
-@elidable
-def normalize((a, b)):
-  g = a.gcd(b)
-  return (a.div(g), b.div(g))
 
 def read_char():
   char = os.read(0, 1)
@@ -104,31 +73,25 @@ def mainloop(program, col_max, row_max, read_uni):
 
     elif slurp:
       if code != slurp_char:
-        stack.append(fromint(code))
+        stack.append(rbigfrac.fromint(code))
       else:
         slurp = False
         slurp_char = 0
 
     elif code in NOUNS:
-      stack.append(fromint(NOUNS[code]))
+      stack.append(rbigfrac.fromint(NOUNS[code]))
 
     elif code in DYADICS:
       try:
-        (c, d), (a, b), o = stack.pop(), stack.pop(), ZERO
-        if   code ==  37:
-          c = a.mul(d).div(b.mul(c)).mul(c)
-          o = (a.mul(d).sub(b.mul(c)), b.mul(d))
-        elif code ==  42: o = (a.mul(c), b.mul(d))
-        elif code ==  43: o = (a.mul(d).add(b.mul(c)), b.mul(d))
-        elif code ==  44:
-          if c.int_eq(0): raise ZeroDivisionError
-          o = (a.mul(d), b.mul(c))
-        elif code ==  45: o = (a.mul(d).sub(b.mul(c)), b.mul(d))
-        elif code ==  40: o = frombool(a.mul(d).lt(b.mul(c)))
-        elif code ==  41: o = frombool(a.mul(d).gt(b.mul(c)))
-        elif code ==  61: o = frombool(a.mul(d).eq(b.mul(c)))
-        if o[1].int_ne(1):
-          o = normalize(o)
+        b, a, o = stack.pop(), stack.pop(), ZERO
+        if   code ==  37: o = a.mod(b)
+        elif code ==  42: o = a.mul(b)
+        elif code ==  43: o = a.add(b)
+        elif code ==  44: o = a.div(b)
+        elif code ==  45: o = a.sub(b)
+        elif code ==  40: o = rbigfrac.frombool(a.lt(b))
+        elif code ==  41: o = rbigfrac.frombool(a.gt(b))
+        elif code ==  61: o = rbigfrac.frombool(a.eq(b))
         stack.append(o)
       except:
         raise
@@ -145,7 +108,7 @@ def mainloop(program, col_max, row_max, read_uni):
           a, b, c = stack.pop(), stack.pop(), stack.pop()
           stack.extend([a, c, b])
         elif code ==  91:
-          n = toint(stack.pop())
+          n = stack.pop().toint()
           i = stacklen - n - 1
           if i >= 0:
             stacks.append(stack[:i])
@@ -158,7 +121,7 @@ def mainloop(program, col_max, row_max, read_uni):
         elif code ==  93:
           stack = stacks.pop() + stack
           register, has_register = registers.pop()
-        elif code == 108: stack.append(fromint(stacklen))
+        elif code == 108: stack.append(rbigfrac.fromint(stacklen))
         elif code == 114: stack.reverse()
         elif code == 123:
           a = stack.pop(0)
@@ -197,15 +160,15 @@ def mainloop(program, col_max, row_max, read_uni):
             register = stack.pop()
             has_register = True
         elif code ==  46:
-          pcy, pcx = toint(stack.pop()), toint(stack.pop())
+          pcy, pcx = stack.pop().toint(), stack.pop().toint()
         elif code ==  59:
           return
         elif code ==  63:
-          skip = not tobool(stack.pop())
+          skip = not stack.pop().tobool()
         elif code == 103:
-          y, x = toint(stack.pop()), toint(stack.pop())
+          y, x = stack.pop().toint(), stack.pop().toint()
           if (x, y) in program:
-            stack.append(fromint(program[(x, y)]))
+            stack.append(rbigfrac.fromint(program[(x, y)]))
           else:
             stack.append(ZERO)
         elif code == 105:
@@ -213,15 +176,15 @@ def mainloop(program, col_max, row_max, read_uni):
             char = read_unichar()
           else:
             char = read_char()
-          stack.append(fromint(char))
+          stack.append(rbigfrac.fromint(char))
         elif code == 110:
           n = stack.pop()
-          os.write(1, tostr(n))
+          os.write(1, n.tostr())
         elif code == 111:
           n = stack.pop()
-          os.write(1, unichr_as_utf8(toint(n)))
+          os.write(1, unichr_as_utf8(n.toint()))
         elif code == 112:
-          y, x, v = toint(stack.pop()), toint(stack.pop()), toint(stack.pop())
+          y, x, v = stack.pop().toint(), stack.pop().toint(), stack.pop().toint()
           program[(x, y)] = v
           if x in col_max:
             col_max[x] = max(col_max[x], y)
