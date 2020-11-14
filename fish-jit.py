@@ -37,6 +37,8 @@ def read_unichar():
     code = ord(char[0])
     if code < 0x80:
       return code
+    elif code < 0xC0:
+      raise UnicodeDecodeError
     elif code < 0xE0:
       return codepoint_at_pos(char + os.read(0, 1), 0)
     elif code < 0xF0:
