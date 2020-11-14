@@ -102,13 +102,13 @@ def mainloop(program, col_max, row_max, read_uni):
       stacklen = len(stack)
       try:
         if code == 36:
-          a, b = stack.pop(), stack.pop()
-          stack.extend([a, b])
+          b, a = stack.pop(), stack.pop()
+          stack.extend([b, a])
         elif code == 58:
           stack.append(stack[stacklen-1])
         elif code == 64:
-          a, b, c = stack.pop(), stack.pop(), stack.pop()
-          stack.extend([a, c, b])
+          c, b, a = stack.pop(), stack.pop(), stack.pop()
+          stack.extend([c, a, b])
         elif code == 91:
           n = stack.pop().toint()
           i = stacklen - n - 1
