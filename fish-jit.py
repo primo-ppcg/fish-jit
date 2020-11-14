@@ -99,15 +99,15 @@ def mainloop(program, col_max, row_max, read_uni):
     elif code in STACKS:
       stacklen = len(stack)
       try:
-        if   code ==  36:
+        if code == 36:
           a, b = stack.pop(), stack.pop()
           stack.extend([a, b])
-        elif code ==  58:
+        elif code == 58:
           stack.append(stack[stacklen-1])
-        elif code ==  64:
+        elif code == 64:
           a, b, c = stack.pop(), stack.pop(), stack.pop()
           stack.extend([a, c, b])
-        elif code ==  91:
+        elif code == 91:
           n = stack.pop().toint()
           i = stacklen - n - 1
           if i >= 0:
@@ -118,11 +118,13 @@ def mainloop(program, col_max, row_max, read_uni):
             has_register = False
           else:
             raise RuntimeError('Insufficient stack')
-        elif code ==  93:
+        elif code == 93:
           stack = stacks.pop() + stack
           register, has_register = registers.pop()
-        elif code == 108: stack.append(rbigfrac.fromint(stacklen))
-        elif code == 114: stack.reverse()
+        elif code == 108:
+          stack.append(rbigfrac.fromint(stacklen))
+        elif code == 114:
+          stack.reverse()
         elif code == 123:
           a = stack.pop(0)
           stack.append(a)
@@ -149,9 +151,9 @@ def mainloop(program, col_max, row_max, read_uni):
 
     elif code in CONTROL:
       try:
-        if   code ==  33:
+        if code == 33:
           skip = True
-        elif code ==  38:
+        elif code == 38:
           if has_register:
             stack.append(register)
             register = ZERO
@@ -159,11 +161,11 @@ def mainloop(program, col_max, row_max, read_uni):
           else:
             register = stack.pop()
             has_register = True
-        elif code ==  46:
+        elif code == 46:
           pcy, pcx = stack.pop().toint(), stack.pop().toint()
-        elif code ==  59:
+        elif code == 59:
           return
-        elif code ==  63:
+        elif code == 63:
           skip = not stack.pop().tobool()
         elif code == 103:
           y, x = stack.pop().toint(), stack.pop().toint()
@@ -293,7 +295,6 @@ def main(argv):
 
 def display_usage(name):
   os.write(2, 'Usage: %s [-h] (<file> | -c <code>) [<options>]\n'%name)
-
 
 def display_help():
   os.write(2, '''
