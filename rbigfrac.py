@@ -46,27 +46,31 @@ class rbigfrac(object):
     return self.n.div(self.d).toint()
 
   @jit.elidable
-  def tostr(self):
-    if self.d.int_eq(1):
-      return self.n.str()
-    # undesirable!
-    return formatd(self.n.tofloat() / self.d.tofloat(), 'r', 0)
+  def tofloat(self):
+    return self.n.tofloat() / self.d.tofloat()
 
   @jit.elidable
   def tobool(self):
     return self.n.tobool()
 
   @jit.elidable
+  def tostr(self):
+    if self.d.int_eq(1):
+      return self.n.str()
+    # undesirable!
+    return formatd(self.tofloat(), 'r', 0)
+
+  @jit.elidable
   def add(self, other):
     return rbigfrac(
-      self.n.mul(other.d).add(other.n.mul(self.d)),
+      self.n.mul(other.d).add(self.d.mul(other.n)),
       self.d.mul(other.d)
     )
 
   @jit.elidable
   def sub(self, other):
     return rbigfrac(
-      self.n.mul(other.d).sub(other.n.mul(self.d)),
+      self.n.mul(other.d).sub(self.d.mul(other.n)),
       self.d.mul(other.d)
     )
 
