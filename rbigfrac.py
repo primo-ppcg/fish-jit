@@ -3,18 +3,17 @@ from rpython.rlib.rbigint import rbigint, ONERBIGINT, NULLRBIGINT
 from rpython.rlib.rfloat import float_as_rbigint_ratio, formatd
 
 class rbigfrac(object):
-  __slots__ = ['numerator', 'denominator']
+  _immutable_ = True
+  _immutable_fields_ = ['numerator', 'denominator']
 
   def __init__(self, numerator, denominator):
-    self.numerator = numerator
-    self.denominator = denominator
-    self.normalize()
-
-  def normalize(self):
-    if self.denominator.int_ne(1):
-      g = self.numerator.gcd(self.denominator)
-      self.numerator = self.numerator.div(g)
-      self.denominator = self.denominator.div(g)
+    if denominator.int_eq(1):
+      self.numerator = numerator
+      self.denominator = ONERBIGINT
+    else:
+      g = numerator.gcd(denominator)
+      self.numerator = numerator.div(g)
+      self.denominator = denominator.div(g)
 
   @property
   def n(self):
