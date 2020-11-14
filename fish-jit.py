@@ -57,6 +57,14 @@ def normalize((a, b)):
 def read_char():
   char = os.read(0, 1)
   if char:
+    return ord(char[0])
+  return -1
+
+def read_unichar():
+  """Assumes utf-8 input, latin1 will be mangled.
+  """
+  char = os.read(0, 1)
+  if char:
     code = ord(char[0])
     if code < 0x80:
       return code
@@ -68,7 +76,7 @@ def read_char():
   return -1
 
 
-def mainloop(program, col_max, row_max):
+def mainloop(program, col_max, row_max, read_uni):
   pcx, pcy = 0, 0
   dx, dy = 1, 0
   stack = []
@@ -201,7 +209,11 @@ def mainloop(program, col_max, row_max):
           else:
             stack.append(ZERO)
         elif code == 105:
-          stack.append(fromint(read_char()))
+          if read_uni:
+            char = read_unichar()
+          else:
+            char = read_char()
+          stack.append(fromint(char))
         elif code == 110:
           n = stack.pop()
           os.write(1, tostr(n))
@@ -254,7 +266,7 @@ def mainloop(program, col_max, row_max):
     pcx, pcy = x, y
 
 
-def run(source):
+def run(source, read_uni):
   lines = source.splitlines()
   program = {}
   col_max = {}
@@ -274,35 +286,66 @@ def run(source):
         row_max[y] = x
       x += 1
     y += 1
-  mainloop(program, col_max, row_max)
+  mainloop(program, col_max, row_max, read_uni)
 
 
 def main(argv):
-  filename = ''
-  source = ''
+  from rgetopt import gnu_getopt, GetoptError
   try:
-    filename = argv[1]
-    with open(filename) as file:
-      source = file.read()
-  except IndexError:
-    os.write(2, 'Usage: %s program.fsh'%argv[0])
-    return 1
-  except IOError:
-    os.write(2, 'File not found: %s'%filename)
+    optlist, args = gnu_getopt(argv[1:], 'hc:u', ['help', 'code=', 'utf8'])
+  except GetoptError as ex:
+    os.write(2, ex.msg + '\n')
     return 1
 
+  source = ''
+  read_uni = False
+  for opt, val in optlist:
+    if opt == '-c' or opt == '--code':
+      source = val
+    elif opt == '-u' or opt == '--utf8':
+      read_uni = True
+    elif opt == '-h' or opt == '--help':
+      display_usage(argv[0])
+      display_help()
+      return 1
+
+  if source == '':
+    try:
+      with open(args[0]) as file:
+        source = file.read()
+    except IndexError:
+      display_usage(argv[0])
+      return 1
+    except IOError:
+      os.write(2, 'File not found: %s\n'%args[0])
+      return 1
+
   try:
-    run(source)
+    run(source, read_uni)
   except:
-    os.write(2, 'something smells fishy...')
+    os.write(2, 'something smells fishy...\n')
     return 1
   return 0
 
 
+def display_usage(name):
+  os.write(2, 'Usage: %s [-h] (<file> | -c <code>) [<options>]\n'%name)
+
+
+def display_help():
+  os.write(2, '''
+A just-in-time compiling interpreter for the ><> programming language.
+
+Arguments:
+  file          a ><> script file to execute
+
+Options:
+  -c, --code=   a string of instructions to be executed
+                if present, the file argument will be ignored
+  -u, --utf8    parse input as utf-8
+  -h, --help    display this message
+''')
+
+
 def target(*args):
   return main
-
-
-if __name__ == '__main__':
-  import sys
-  main(sys.argv)
