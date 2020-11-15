@@ -2,7 +2,7 @@ import os
 
 from rpython.rlib.jit import JitDriver, elidable
 from rpython.rlib.rrandom import Random
-from rpython.rlib.rutf8 import unichr_as_utf8, codepoint_at_pos
+from rpython.rlib.rutf8 import Utf8StringIterator, unichr_as_utf8, codepoint_at_pos
 
 from rbigfrac import rbigfrac, ZERO
 
@@ -241,8 +241,8 @@ def run(source, read_uni):
   y = 0
   for line in lines:
     x = 0
-    for c in line.decode('utf-8'):
-      program[(x, y)] = ord(c)
+    for c in Utf8StringIterator(line):
+      program[(x, y)] = c
       if x in col_max:
         col_max[x] = max(col_max[x], y)
       else:
