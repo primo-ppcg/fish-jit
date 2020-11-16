@@ -1,7 +1,9 @@
 import os
 
 from rpython.rlib.jit import JitDriver, elidable
+from rpython.rlib.rarithmetic import r_uint64
 from rpython.rlib.rrandom import Random
+from rpython.rlib.rtime import time
 from rpython.rlib.rutf8 import Utf8StringIterator, unichr_as_utf8, codepoint_at_pos
 
 from rbigfrac import rbigfrac, ZERO
@@ -58,7 +60,7 @@ def mainloop(program, col_max, row_max, read_uni):
   skip = False
   slurp = False
   slurp_char = 0
-  prng = Random()
+  prng = Random(r_uint64(time()*1000))
 
   while True:
     jitdriver.jit_merge_point(
