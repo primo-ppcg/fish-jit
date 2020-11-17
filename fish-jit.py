@@ -187,8 +187,11 @@ def mainloop(program, col_max, row_max, read_uni):
           n = stack.pop()
           os.write(1, n.tostr())
         elif code == 111:
-          n = stack.pop()
-          os.write(1, unichr_as_utf8(n.toint()))
+          n = stack.pop().toint()
+          if n >= 0:
+            os.write(1, unichr_as_utf8(n))
+          else:
+            raise UnicodeError('utf-8', 'out of range', n)
         elif code == 112:
           y, x, v = stack.pop().toint(), stack.pop().toint(), stack.pop().toint()
           program[(x, y)] = v
