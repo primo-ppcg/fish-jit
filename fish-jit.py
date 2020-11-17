@@ -123,18 +123,25 @@ def mainloop(program, col_max, row_max, read_uni):
           else:
             raise RuntimeError('Insufficient stack')
         elif code == 93:
-          stack = stacks.pop() + stack
-          register, has_register = registers.pop()
+          if len(stacks) >= 1:
+            stack = stacks.pop() + stack
+            register, has_register = registers.pop()
+          else:
+            stack = []
+            register = ZERO
+            has_register = False
         elif code == 108:
           stack.append(rbigfrac.fromint(stacklen))
         elif code == 114:
           stack.reverse()
         elif code == 123:
-          a = stack.pop(0)
-          stack.append(a)
+          if stacklen >= 1:
+            a = stack.pop(0)
+            stack.append(a)
         elif code == 125:
-          a = stack.pop()
-          stack.insert(0, a)
+          if stacklen >= 1:
+            a = stack.pop()
+            stack.insert(0, a)
         elif code == 126:
           stack.pop()
       except:
