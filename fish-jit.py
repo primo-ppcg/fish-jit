@@ -49,7 +49,7 @@ def read_unichar():
   return -1
 
 
-def mainloop(program, col_max, row_max, read_uni):
+def mainloop(program, col_max, row_max, read_func, no_prng):
   pcx, pcy = 0, 0
   dx, dy = 1, 0
   stack = []
@@ -156,7 +156,7 @@ def mainloop(program, col_max, row_max, read_uni):
       elif code ==  94: dx, dy = (  0,  -1)
       elif code ==  95: dx, dy = ( dx, -dy)
       elif code == 118: dx, dy = (  0,   1)
-      elif code == 120:
+      elif code == 120 and not no_prng:
         dx, dy = [(0, 1), (1, 0), (0, -1), (-1, 0)][int(prng.random() * 4)]
       elif code == 124: dx, dy = (-dx,  dy)
 
@@ -185,10 +185,7 @@ def mainloop(program, col_max, row_max, read_uni):
           else:
             stack.append(ZERO)
         elif code == 105:
-          if read_uni:
-            char = read_unichar()
-          else:
-            char = read_char()
+          char = read_func()
           stack.append(rbigfrac.fromint(char))
         elif code == 110:
           n = stack.pop()
@@ -245,7 +242,7 @@ def mainloop(program, col_max, row_max, read_uni):
     pcx, pcy = x, y
 
 
-def run(source, read_uni):
+def parse(source):
   lines = source.splitlines()
   program = {}
   col_max = {}
@@ -265,24 +262,27 @@ def run(source, read_uni):
         row_max[y] = x
       x += 1
     y += 1
-  mainloop(program, col_max, row_max, read_uni)
+  return program, col_max, row_max
 
 
 def main(argv):
   from rgetopt import gnu_getopt, GetoptError
   try:
-    optlist, args = gnu_getopt(argv[1:], 'hc:u', ['help', 'code=', 'utf8'])
+    optlist, args = gnu_getopt(argv[1:], 'hc:u', ['help', 'code=', 'utf8', 'no-prng'])
   except GetoptError as ex:
     os.write(2, ex.msg + '\n')
     return 1
 
   source = ''
-  read_uni = False
+  read_func = read_char
+  no_prng = False
   for opt, val in optlist:
     if opt == '-c' or opt == '--code':
       source = val
     elif opt == '-u' or opt == '--utf8':
-      read_uni = True
+      read_func = read_unichar
+    elif opt == '--no-prng':
+      no_prng = True
     elif opt == '-h' or opt == '--help':
       display_usage(argv[0])
       display_help()
@@ -299,8 +299,10 @@ def main(argv):
       os.write(2, 'File not found: %s\n'%args[0])
       return 1
 
+  program, col_max, row_max = parse(source)
+
   try:
-    run(source, read_uni)
+    mainloop(program, col_max, row_max, read_func, no_prng)
   except:
     os.write(2, 'something smells fishy...\n')
     return 1
@@ -321,6 +323,7 @@ Options:
   -c, --code=   a string of instructions to be executed
                 if present, the file argument will be ignored
   -u, --utf8    parse input as utf-8
+  --no-prng     disable the PRNG (`x` command becomes a no-op)
   -h, --help    display this message
 ''')
 
