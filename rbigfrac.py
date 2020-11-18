@@ -50,7 +50,7 @@ class rbigfrac(object):
   def tofloat(self):
     nman, nexp = _AsScaledDouble(self.n)
     dman, dexp = _AsScaledDouble(self.d)
-    return math.ldexp(nman, nexp-dexp) / dman
+    return math.ldexp(nman / dman, nexp - dexp)
 
   @jit.elidable
   def tobool(self):
