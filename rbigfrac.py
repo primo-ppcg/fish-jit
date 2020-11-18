@@ -1,5 +1,7 @@
+import math
+
 from rpython.rlib import jit
-from rpython.rlib.rbigint import rbigint, ONERBIGINT, NULLRBIGINT
+from rpython.rlib.rbigint import rbigint, ONERBIGINT, NULLRBIGINT, _AsScaledDouble
 from rpython.rlib.rfloat import float_as_rbigint_ratio, formatd
 
 class rbigfrac(object):
@@ -46,7 +48,9 @@ class rbigfrac(object):
 
   @jit.elidable
   def tofloat(self):
-    return self.n.tofloat() / self.d.tofloat()
+    nman, nexp = _AsScaledDouble(self.n)
+    dman, dexp = _AsScaledDouble(self.d)
+    return math.ldexp(nman, nexp-dexp) / dman
 
   @jit.elidable
   def tobool(self):
