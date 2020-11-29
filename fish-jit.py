@@ -13,16 +13,14 @@ jitdriver = JitDriver(
   reds   = 'auto'
 )
 
-NOUNS = {
-  48: 0, 49: 1, 50:  2, 51:  3, 52:  4,  53:  5,  54:  6,  55:  7,
-  56: 8, 57: 9, 97: 10, 98: 11, 99: 12, 100: 13, 101: 14, 102: 15
-}
+NOUNS = dict([(ord(c), rbigfrac.fromint(int(c, 16))) for c in '0123456789abcdef'])
 
-DYADICS = { 37:0, 40:0, 41:0, 42:0, 43:0, 44:0, 45:0, 61:0 }
-STACKS  = { 36:0, 58:0, 64:0, 91:0, 93:0,108:0,114:0,123:0,125:0,126:0 }
-MIRRORS = { 35:0, 47:0, 60:0, 62:0, 92:0, 94:0, 95:0,118:0,120:0,124:0 }
-CONTROL = {  0:0, 32:0, 33:0, 38:0, 46:0, 59:0, 63:0,103:0,105:0,110:0,111:0,112:0 }
-QUOTES  = { 34:0, 39:0 }
+DYADICS = dict([(ord(c), True) for c in '%*+,-()='])
+STACKS  = dict([(ord(c), True) for c in '$:@[]lr{}~'])
+MIRRORS = dict([(ord(c), True) for c in '#/<>\\^_vx|'])
+CONTROL = dict([(ord(c), True) for c in '\0 !&.;?ginop'])
+
+QUOTES  = { 34: True, 39: True }
 
 
 def read_char():
@@ -83,7 +81,7 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
         slurp_char = 0
 
     elif code in NOUNS:
-      stack.append(rbigfrac.fromint(NOUNS[code]))
+      stack.append(NOUNS[code])
 
     elif code in DYADICS:
       try:
