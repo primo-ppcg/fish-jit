@@ -1,21 +1,23 @@
 import math
 
 from rpython.rlib import jit
-from rpython.rlib.rbigint import rbigint, ONERBIGINT, NULLRBIGINT, _AsScaledDouble
+from rpython.rlib.rbigint import rbigint, ONERBIGINT, NULLRBIGINT, _AsScaledDouble, SHIFT
 from rpython.rlib.rfloat import float_as_rbigint_ratio, formatd
 
 class rbigfrac(object):
-  _immutable_ = True
-  _immutable_fields_ = ['numerator', 'denominator']
+  __slots__ = ['numerator', 'denominator']
 
   def __init__(self, numerator, denominator):
-    if denominator.int_eq(1):
-      self.numerator = numerator
-      self.denominator = ONERBIGINT
-    else:
-      g = numerator.gcd(denominator)
-      self.numerator = numerator.div(g)
-      self.denominator = denominator.div(g)
+    self.numerator = numerator
+    self.denominator = denominator
+
+  def normalize(self):
+    if self.denominator.int_ne(1):
+      g = self.numerator.gcd(self.denominator)
+      if self.denominator.sign != g.sign:
+        g = g.neg()
+      self.numerator = self.numerator.div(g)
+      self.denominator = self.denominator.div(g)
 
   @property
   def n(self):
@@ -50,7 +52,7 @@ class rbigfrac(object):
   def tofloat(self):
     nman, nexp = _AsScaledDouble(self.n)
     dman, dexp = _AsScaledDouble(self.d)
-    return math.ldexp(nman / dman, nexp - dexp)
+    return math.ldexp(nman / dman, (nexp - dexp) * SHIFT)
 
   @jit.elidable
   def tobool(self):
@@ -58,6 +60,7 @@ class rbigfrac(object):
 
   @jit.elidable
   def tostr(self):
+    self.normalize()
     if self.d.int_eq(1):
       return self.n.str()
     # undesirable!
@@ -115,15 +118,15 @@ class rbigfrac(object):
 
   @jit.elidable
   def le(self, other):
-    return self.n.mul(other.d).le(self.d.mul(other.n))
+    return not self.gt(other)
 
   @jit.elidable
   def gt(self, other):
-    return self.n.mul(other.d).gt(self.d.mul(other.n))
+    return other.lt(self)
 
   @jit.elidable
   def ge(self, other):
-    return self.n.mul(other.d).ge(self.d.mul(other.n))
+    return not self.lt(other)
 
   @jit.elidable
   def eq(self, other):
@@ -131,7 +134,7 @@ class rbigfrac(object):
 
   @jit.elidable
   def ne(self, other):
-    return self.n.mul(other.d).ne(self.d.mul(other.n))
+    return not self.eq(other)
 
 
 ZERO = rbigfrac(NULLRBIGINT, ONERBIGINT)
