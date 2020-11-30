@@ -14,8 +14,6 @@ class rbigfrac(object):
   def normalize(self):
     if self.denominator.int_ne(1):
       g = self.numerator.gcd(self.denominator)
-      if self.denominator.sign != g.sign:
-        g = g.neg()
       self.numerator = self.numerator.div(g)
       self.denominator = self.denominator.div(g)
 
@@ -68,32 +66,46 @@ class rbigfrac(object):
 
   @jit.elidable
   def add(self, other):
-    return rbigfrac(
+    ret = rbigfrac(
       self.n.mul(other.d).add(self.d.mul(other.n)),
       self.d.mul(other.d)
     )
+    if self.d.size > 1 and other.d.size > 1:
+      ret.normalize()
+    return ret
 
   @jit.elidable
   def sub(self, other):
-    return rbigfrac(
+    ret = rbigfrac(
       self.n.mul(other.d).sub(self.d.mul(other.n)),
       self.d.mul(other.d)
     )
+    if self.d.size > 1 and other.d.size > 1:
+      ret.normalize()
+    return ret
 
   @jit.elidable
   def mul(self, other):
-    return rbigfrac(
+    ret = rbigfrac(
       self.n.mul(other.n),
       self.d.mul(other.d)
     )
+    if self.d.size > 1 and other.d.size > 1:
+      ret.normalize()
+    return ret
 
   @jit.elidable
   def div(self, other):
-    if other.n.int_eq(0): raise ZeroDivisionError
-    return rbigfrac(
-      self.n.mul(other.d),
-      self.d.mul(other.n)
-    )
+    if other.n.sign == 0: raise ZeroDivisionError
+    num = self.n.mul(other.d)
+    den = self.d.mul(other.n)
+    if den.sign == -1:
+      num = num.neg()
+      den = den.neg()
+    ret = rbigfrac(num, den)
+    if self.d.size > 1 and other.n.size > 1:
+      ret.normalize()
+    return ret
 
   @jit.elidable
   def floordiv(self, other):
@@ -107,10 +119,13 @@ class rbigfrac(object):
     num = self.n.mul(other.d)
     den = self.d.mul(other.n)
     quo = num.div(den)
-    return rbigfrac(
+    ret = rbigfrac(
       num.sub(den.mul(quo)),
       self.d.mul(other.d)
     )
+    if self.d.size > 1 and other.d.size > 1:
+      ret.normalize()
+    return ret
 
   @jit.elidable
   def lt(self, other):
@@ -118,7 +133,7 @@ class rbigfrac(object):
 
   @jit.elidable
   def le(self, other):
-    return not self.gt(other)
+    return not other.lt(self)
 
   @jit.elidable
   def gt(self, other):
