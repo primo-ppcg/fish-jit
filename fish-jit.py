@@ -323,14 +323,16 @@ def display_usage(name):
 def display_help():
   os.write(2, '''
 A just-in-time compiling interpreter for the ><> programming language.
+
 Arguments:
-  file          a ><> script file to execute
+  file            a ><> script file to execute
+
 Options:
-  -c, --code=   a string of instructions to be executed
-                if present, the file argument will be ignored
-  -u, --utf8    parse input as utf-8
-  --no-prng     disable the PRNG (`x` command becomes a no-op)
-  -h, --help    display this message
+  -c, --code=     a string of instructions to be executed
+                  if present, the file argument will be ignored
+  -u, --utf8      parse input as utf-8
+      --no-prng   disable the PRNG (`x` command becomes a no-op)
+  -h, --help      display this message
 ''')
 
 
