@@ -137,11 +137,11 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
         elif code == 114:
           stack.reverse()
         elif code == 123:
-          if stacklen >= 1:
+          if stacklen > 1:
             a = stack.pop(0)
             stack.append(a)
         elif code == 125:
-          if stacklen >= 1:
+          if stacklen > 1:
             a = stack.pop()
             stack.insert(0, a)
         elif code == 126:
