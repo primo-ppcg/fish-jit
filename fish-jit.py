@@ -13,14 +13,21 @@ jitdriver = JitDriver(
   reds   = 'auto'
 )
 
-NOUNS = dict([(ord(c), rbigfrac.fromint(int(c, 16))) for c in '0123456789abcdef'])
 
-DYADICS = dict([(ord(c), True) for c in '%*+,-()='])
-STACKS  = dict([(ord(c), True) for c in '$:@[]lr{}~'])
-MIRRORS = dict([(ord(c), True) for c in '#/<>\\^_vx|'])
-CONTROL = dict([(ord(c), True) for c in '\0 !&.;?ginop'])
-
-QUOTES  = { 34: True, 39: True }
+NOUNS, DYADICS, STACKS, MIRRORS, CONTROL, QUOTES, OTHER = range(7)
+symbols = {
+  NOUNS:   '0123456789abcdef',
+  DYADICS: '%*+,-()=',
+  STACKS:  '$:@[]lr{}~',
+  MIRRORS: '#/<>\\^_vx|',
+  CONTROL: '\0 !&.;?ginop',
+  QUOTES:  '\'"'
+}
+types = {}
+for type, chars in symbols.items():
+  for char in chars:
+    types[ord(char)] = type
+nouns = dict([(ord(c), rbigfrac.fromint(int(c, 16))) for c in symbols[NOUNS]])
 
 
 def read_char():
@@ -52,8 +59,7 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
   dx, dy = 1, 0
   stack = []
   stacks = []
-  register = ZERO
-  has_register = False
+  register = None
   registers = []
   skip = False
   slurp = False
@@ -66,9 +72,9 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
     )
 
     if (pcx, pcy) in program:
-      code = program[(pcx, pcy)]
+      code, type = program[(pcx, pcy)]
     else:
-      code = 0
+      code, type = 0, CONTROL
 
     if skip:
       skip = False
@@ -80,10 +86,10 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
         slurp = False
         slurp_char = 0
 
-    elif code in NOUNS:
-      stack.append(NOUNS[code])
+    elif type == NOUNS:
+      stack.append(nouns[code])
 
-    elif code in DYADICS:
+    elif type == DYADICS:
       try:
         b, a, o = stack.pop(), stack.pop(), ZERO
         if   code ==  37: o = a.mod(b)
@@ -98,7 +104,7 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
       except:
         raise
 
-    elif code in STACKS:
+    elif type == STACKS:
       stacklen = len(stack)
       try:
         if code == 36:
@@ -115,19 +121,17 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
           if i >= 0:
             stacks.append(stack[:i])
             stack = stack[i:]
-            registers.append((register, has_register))
-            register = ZERO
-            has_register = False
+            registers.append(register)
+            register = None
           else:
             raise RuntimeError('Insufficient stack')
         elif code == 93:
           if len(stacks) >= 1:
             stack = stacks.pop() + stack
-            register, has_register = registers.pop()
+            register = registers.pop()
           else:
             stack = []
-            register = ZERO
-            has_register = False
+            register = None
         elif code == 108:
           stack.append(rbigfrac.fromint(stacklen))
         elif code == 114:
@@ -145,7 +149,7 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
       except:
         raise
 
-    elif code in MIRRORS:
+    elif type == MIRRORS:
       if   code ==  35: dx, dy = (-dx, -dy)
       elif code ==  47: dx, dy = (-dy, -dx)
       elif code ==  60: dx, dy = ( -1,   0)
@@ -158,18 +162,16 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
         dx, dy = [(0, 1), (1, 0), (0, -1), (-1, 0)][int(prng.random() * 4)]
       elif code == 124: dx, dy = (-dx,  dy)
 
-    elif code in CONTROL:
+    elif type == CONTROL:
       try:
         if code == 33:
           skip = True
         elif code == 38:
-          if has_register:
-            stack.append(register)
-            register = ZERO
-            has_register = False
-          else:
+          if register is None:
             register = stack.pop()
-            has_register = True
+          else:
+            stack.append(register)
+            register = None
         elif code == 46:
           pcy, pcx = stack.pop().toint(), stack.pop().toint()
         elif code == 59:
@@ -179,7 +181,7 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
         elif code == 103:
           y, x = stack.pop().toint(), stack.pop().toint()
           if (x, y) in program:
-            stack.append(rbigfrac.fromint(program[(x, y)]))
+            stack.append(rbigfrac.fromint(program[(x, y)][0]))
           else:
             stack.append(ZERO)
         elif code == 105:
@@ -196,7 +198,11 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
             raise UnicodeError('utf-8', 'out of range', n)
         elif code == 112:
           y, x, v = stack.pop().toint(), stack.pop().toint(), stack.pop().toint()
-          program[(x, y)] = v
+          if v in types:
+            t = types[v]
+          else:
+            t = OTHER
+          program[(x, y)] = (v, t)
           if x in col_max:
             col_max[x] = max(col_max[x], y)
           else:
@@ -208,7 +214,7 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
       except:
         raise
 
-    elif code in QUOTES:
+    elif type == QUOTES:
       slurp = True
       slurp_char = code
 
@@ -249,7 +255,11 @@ def parse(source):
   for line in lines:
     x = 0
     for c in Utf8StringIterator(line):
-      program[(x, y)] = c
+      if c in types:
+        t = types[c]
+      else:
+        t = OTHER
+      program[(x, y)] = (c, t)
       if x in col_max:
         col_max[x] = max(col_max[x], y)
       else:
@@ -313,10 +323,8 @@ def display_usage(name):
 def display_help():
   os.write(2, '''
 A just-in-time compiling interpreter for the ><> programming language.
-
 Arguments:
   file          a ><> script file to execute
-
 Options:
   -c, --code=   a string of instructions to be executed
                 if present, the file argument will be ignored
