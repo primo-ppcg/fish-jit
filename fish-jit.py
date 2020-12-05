@@ -1,6 +1,6 @@
 import os
 
-from rpython.rlib.jit import JitDriver, elidable
+from rpython.rlib.jit import JitDriver
 from rpython.rlib.rarithmetic import r_uint64
 from rpython.rlib.rrandom import Random
 from rpython.rlib.rtime import time
@@ -14,20 +14,17 @@ jitdriver = JitDriver(
 )
 
 
-NOUNS, DYADICS, STACKS, MIRRORS, CONTROL, QUOTES, OTHER = range(7)
-symbols = {
-  NOUNS:   '0123456789abcdef',
-  DYADICS: '%*+,-()=',
-  STACKS:  '$:@[]lr{}~',
-  MIRRORS: '#/<>\\^_vx|',
-  CONTROL: '\0 !&.;?ginop',
-  QUOTES:  '\'"'
+T_NOUNS, T_DYADICS, T_STACKS, T_MIRRORS, T_CONTROL, T_QUOTES, T_OTHER = range(7)
+SYMBOLS = {
+  T_NOUNS:   '0123456789abcdef',
+  T_DYADICS: '%*+,-()=',
+  T_STACKS:  '$:@[]lr{}~',
+  T_MIRRORS: '#/<>\\^_vx|',
+  T_CONTROL: '\0 !&.;?ginop',
+  T_QUOTES:  '\'"'
 }
-types = {}
-for type, chars in symbols.items():
-  for char in chars:
-    types[ord(char)] = type
-nouns = dict([(ord(c), rbigfrac.fromint(int(c, 16))) for c in symbols[NOUNS]])
+TYPES = dict([(ord(c), t) for t, chars in SYMBOLS.items() for c in chars])
+NOUNS = dict([(ord(c), rbigfrac.fromint(int(c, 16))) for c in SYMBOLS[T_NOUNS]])
 
 
 def read_char():
@@ -74,7 +71,7 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
     if (pcx, pcy) in program:
       code, type = program[(pcx, pcy)]
     else:
-      code, type = 0, CONTROL
+      code, type = 0, T_CONTROL
 
     if skip:
       skip = False
@@ -86,10 +83,10 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
         slurp = False
         slurp_char = 0
 
-    elif type == NOUNS:
-      stack.append(nouns[code])
+    elif type == T_NOUNS:
+      stack.append(NOUNS[code])
 
-    elif type == DYADICS:
+    elif type == T_DYADICS:
       try:
         b, a, o = stack.pop(), stack.pop(), ZERO
         if   code ==  37: o = a.mod(b)
@@ -104,7 +101,7 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
       except:
         raise
 
-    elif type == STACKS:
+    elif type == T_STACKS:
       stacklen = len(stack)
       try:
         if code == 36:
@@ -149,7 +146,7 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
       except:
         raise
 
-    elif type == MIRRORS:
+    elif type == T_MIRRORS:
       if   code ==  35: dx, dy = (-dx, -dy)
       elif code ==  47: dx, dy = (-dy, -dx)
       elif code ==  60: dx, dy = ( -1,   0)
@@ -162,7 +159,7 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
         dx, dy = [(0, 1), (1, 0), (0, -1), (-1, 0)][int(prng.random() * 4)]
       elif code == 124: dx, dy = (-dx,  dy)
 
-    elif type == CONTROL:
+    elif type == T_CONTROL:
       try:
         if code == 33:
           skip = True
@@ -198,10 +195,10 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
             raise UnicodeError('utf-8', 'out of range', n)
         elif code == 112:
           y, x, v = stack.pop().toint(), stack.pop().toint(), stack.pop().toint()
-          if v in types:
-            t = types[v]
+          if v in TYPES:
+            t = TYPES[v]
           else:
-            t = OTHER
+            t = T_OTHER
           program[(x, y)] = (v, t)
           if x in col_max:
             col_max[x] = max(col_max[x], y)
@@ -214,7 +211,7 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
       except:
         raise
 
-    elif type == QUOTES:
+    elif type == T_QUOTES:
       slurp = True
       slurp_char = code
 
@@ -255,10 +252,10 @@ def parse(source):
   for line in lines:
     x = 0
     for c in Utf8StringIterator(line):
-      if c in types:
-        t = types[c]
+      if c in TYPES:
+        t = TYPES[c]
       else:
-        t = OTHER
+        t = T_OTHER
       program[(x, y)] = (c, t)
       if x in col_max:
         col_max[x] = max(col_max[x], y)
