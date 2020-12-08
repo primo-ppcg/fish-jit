@@ -14,17 +14,17 @@ jitdriver = JitDriver(
 )
 
 
-T_NOUNS, T_DYADICS, T_STACKS, T_MIRRORS, T_CONTROL, T_QUOTES, T_OTHER = range(7)
+T_NOUN, T_DYADIC, T_STACK, T_MIRROR, T_CONTROL, T_QUOTE, T_OTHER = range(7)
 SYMBOLS = {
-  T_NOUNS:   '0123456789abcdef',
-  T_DYADICS: '%*+,-()=',
-  T_STACKS:  '$:@[]lr{}~',
-  T_MIRRORS: '#/<>\\^_vx|',
+  T_NOUN:    '0123456789abcdef',
+  T_DYADIC:  '%*+,-()=',
+  T_STACK:   '$:@[]lr{}~',
+  T_MIRROR:  '#/<>\\^_vx|',
   T_CONTROL: '\0 !&.;?ginop',
-  T_QUOTES:  '\'"'
+  T_QUOTE:   '"\''
 }
 TYPES = dict([(ord(c), t) for t, chars in SYMBOLS.items() for c in chars])
-NOUNS = dict([(ord(c), rbigfrac.fromint(int(c, 16))) for c in SYMBOLS[T_NOUNS]])
+NOUNS = dict([(ord(c), rbigfrac.fromint(int(c, 16))) for c in SYMBOLS[T_NOUN]])
 
 
 def read_char():
@@ -83,10 +83,10 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
         slurp = False
         slurp_char = 0
 
-    elif type == T_NOUNS:
+    elif type == T_NOUN:
       stack.append(NOUNS[code])
 
-    elif type == T_DYADICS:
+    elif type == T_DYADIC:
       try:
         b, a, o = stack.pop(), stack.pop(), ZERO
         if   code ==  37: o = a.mod(b)
@@ -101,7 +101,7 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
       except:
         raise
 
-    elif type == T_STACKS:
+    elif type == T_STACK:
       stacklen = len(stack)
       try:
         if code == 36:
@@ -146,7 +146,7 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
       except:
         raise
 
-    elif type == T_MIRRORS:
+    elif type == T_MIRROR:
       if   code ==  35: dx, dy = (-dx, -dy)
       elif code ==  47: dx, dy = (-dy, -dx)
       elif code ==  60: dx, dy = ( -1,   0)
@@ -211,7 +211,7 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
       except:
         raise
 
-    elif type == T_QUOTES:
+    elif type == T_QUOTE:
       slurp = True
       slurp_char = code
 
