@@ -115,7 +115,7 @@ def mainloop(program, col_max, row_max, read_func, no_prng):
         elif code == 91:
           n = stack.pop().toint()
           i = stacklen - n - 1
-          if i >= 0:
+          if i >= 0 and n >= 0:
             stacks.append(stack[:i])
             stack = stack[i:]
             registers.append(register)
