@@ -51,7 +51,7 @@ def read_unichar():
   return -1
 
 
-def mainloop(program, col_max, row_max, read_func, no_prng):
+def run(program, col_max, row_max, read_func, no_prng):
   pcx, pcy = 0, 0
   dx, dy = 1, 0
   stack = []
@@ -279,11 +279,13 @@ def main(argv):
     return 1
 
   source = ''
+  has_code = False
   read_func = read_char
   no_prng = False
   for opt, val in optlist:
     if opt == '-c' or opt == '--code':
       source = val
+      has_code = True
     elif opt == '-u' or opt == '--utf8':
       read_func = read_unichar
     elif opt == '--no-prng':
@@ -293,7 +295,7 @@ def main(argv):
       display_help()
       return 1
 
-  if source == '':
+  if not has_code:
     try:
       with open(args[0]) as file:
         source = file.read()
@@ -307,7 +309,7 @@ def main(argv):
   program, col_max, row_max = parse(source)
 
   try:
-    mainloop(program, col_max, row_max, read_func, no_prng)
+    run(program, col_max, row_max, read_func, no_prng)
   except:
     os.write(2, 'something smells fishy...\n')
     return 1
