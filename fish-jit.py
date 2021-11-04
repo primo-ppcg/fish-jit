@@ -103,7 +103,6 @@ def run(program, col_max, row_max, read_func, no_prng):
         raise
 
     elif type == T_STACK:
-      stacklen = len(stack)
       try:
         if code == 36:
           b, a = stack.pop(), stack.pop()
@@ -115,7 +114,7 @@ def run(program, col_max, row_max, read_func, no_prng):
           stack.extend([c, a, b])
         elif code == 91:
           n = stack.pop().toint()
-          if n <= stacklen:
+          if n <= len(stack):
             stacks.append(stack)
             stack = rdeque(stack.popn(n))
             registers.append(register)
@@ -131,15 +130,15 @@ def run(program, col_max, row_max, read_func, no_prng):
             stack = rdeque()
             register = None
         elif code == 108:
-          stack.append(rbigfrac.fromint(stacklen))
+          stack.append(rbigfrac.fromint(len(stack)))
         elif code == 114:
           stack.reverse()
         elif code == 123:
-          if stacklen > 1:
+          if len(stack) > 1:
             a = stack.popleft()
             stack.append(a)
         elif code == 125:
-          if stacklen > 1:
+          if len(stack) > 1:
             a = stack.pop()
             stack.appendleft(a)
         elif code == 126:
