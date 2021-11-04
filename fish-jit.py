@@ -108,22 +108,16 @@ def run(program, col_max, row_max, read_func, no_prng):
           b, a = stack.pop(), stack.pop()
           stack.extend([b, a])
         elif code == 58:
-          if len(stack) > 0:
-            stack.append(stack.top())
-          else:
-            raise RuntimeError('Insufficient stack')
+          stack.append(stack.top())
         elif code == 64:
           c, b, a = stack.pop(), stack.pop(), stack.pop()
           stack.extend([c, a, b])
         elif code == 91:
           n = stack.pop().toint()
-          if n <= len(stack):
-            stacks.append(stack)
-            stack = rdeque(stack.popn(n))
-            registers.append(register)
-            register = None
-          else:
-            raise RuntimeError('Insufficient stack')
+          stacks.append(stack)
+          stack = rdeque(stack.popn(n))
+          registers.append(register)
+          register = None
         elif code == 93:
           if len(stacks) >= 1:
             tmpstack, stack = stack, stacks.pop()
@@ -133,15 +127,15 @@ def run(program, col_max, row_max, read_func, no_prng):
             stack = rdeque([])
             register = None
         elif code == 108:
-          stack.append(rbigfrac.fromint(len(stack)))
+          stack.append(rbigfrac.fromint(stack.len()))
         elif code == 114:
           stack.reverse()
         elif code == 123:
-          if len(stack) > 1:
+          if stack.len() > 1:
             a = stack.popleft()
             stack.append(a)
         elif code == 125:
-          if len(stack) > 1:
+          if stack.len() > 1:
             a = stack.pop()
             stack.appendleft(a)
         elif code == 126:
