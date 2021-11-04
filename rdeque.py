@@ -34,7 +34,10 @@ class rdeque(object):
       self.right = self.left[:mid]
       self.right.reverse()
       del self.left[:mid]
-    return self.right.pop()
+    try:
+      return self.right.pop()
+    except:
+      raise
 
   def popleft(self):
     if len(self.left) < 1:
@@ -42,7 +45,10 @@ class rdeque(object):
       self.left = self.right[:mid]
       self.left.reverse()
       del self.right[:mid]
-    return self.left.pop()
+    try:
+      return self.left.pop()
+    except:
+      raise
 
   def popn(self, n):
     i = len(self.right) - n
@@ -67,4 +73,3 @@ class rdeque(object):
 
   def reverse(self):
     self.left, self.right = self.right, self.left
-  
