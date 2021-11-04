@@ -55,7 +55,7 @@ def read_unichar():
 def run(program, col_max, row_max, read_func, no_prng):
   pcx, pcy = 0, 0
   dx, dy = 1, 0
-  stack = rdeque()
+  stack = rdeque([])
   stacks = []
   register = None
   registers = []
@@ -108,7 +108,10 @@ def run(program, col_max, row_max, read_func, no_prng):
           b, a = stack.pop(), stack.pop()
           stack.extend([b, a])
         elif code == 58:
-          stack.append(stack.top())
+          if len(stack) > 0:
+            stack.append(stack.top())
+          else:
+            raise RuntimeError('Insufficient stack')
         elif code == 64:
           c, b, a = stack.pop(), stack.pop(), stack.pop()
           stack.extend([c, a, b])
@@ -127,7 +130,7 @@ def run(program, col_max, row_max, read_func, no_prng):
             stack.iadd(tmpstack)
             register = registers.pop()
           else:
-            stack = rdeque()
+            stack = rdeque([])
             register = None
         elif code == 108:
           stack.append(rbigfrac.fromint(len(stack)))
