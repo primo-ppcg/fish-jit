@@ -7,6 +7,7 @@ from rpython.rlib.rtime import time
 from rpython.rlib.rutf8 import Utf8StringIterator, unichr_as_utf8, codepoint_at_pos
 
 from rbigfrac import rbigfrac, ZERO
+from rdeque import rdeque
 
 jitdriver = JitDriver(
   greens = ['pcx', 'pcy', 'dx', 'dy'],
@@ -54,7 +55,7 @@ def read_unichar():
 def run(program, col_max, row_max, read_func, no_prng):
   pcx, pcy = 0, 0
   dx, dy = 1, 0
-  stack = []
+  stack = rdeque()
   stacks = []
   register = None
   registers = []
@@ -108,26 +109,26 @@ def run(program, col_max, row_max, read_func, no_prng):
           b, a = stack.pop(), stack.pop()
           stack.extend([b, a])
         elif code == 58:
-          stack.append(stack[stacklen-1])
+          stack.append(stack.top())
         elif code == 64:
           c, b, a = stack.pop(), stack.pop(), stack.pop()
           stack.extend([c, a, b])
         elif code == 91:
           n = stack.pop().toint()
-          i = stacklen - n - 1
-          if i >= 0:
-            stacks.append(stack[:i])
-            stack = stack[i:]
+          if n <= stacklen:
+            stacks.append(stack)
+            stack = rdeque(stack.popn(n))
             registers.append(register)
             register = None
           else:
             raise RuntimeError('Insufficient stack')
         elif code == 93:
           if len(stacks) >= 1:
-            stack = stacks.pop() + stack
+            tmpstack, stack = stack, stacks.pop()
+            stack.iadd(tmpstack)
             register = registers.pop()
           else:
-            stack = []
+            stack = rdeque()
             register = None
         elif code == 108:
           stack.append(rbigfrac.fromint(stacklen))
@@ -135,12 +136,12 @@ def run(program, col_max, row_max, read_func, no_prng):
           stack.reverse()
         elif code == 123:
           if stacklen > 1:
-            a = stack.pop(0)
+            a = stack.popleft()
             stack.append(a)
         elif code == 125:
           if stacklen > 1:
             a = stack.pop()
-            stack.insert(0, a)
+            stack.appendleft(a)
         elif code == 126:
           stack.pop()
       except:
