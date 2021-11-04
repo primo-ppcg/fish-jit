@@ -1,7 +1,7 @@
 class rdeque(object):
   __slots__ = ['right', 'left']
 
-  def __init__(self, right=[]):
+  def __init__(self, right):
     self.right = right
     self.left = []
 
@@ -67,3 +67,4 @@ class rdeque(object):
 
   def reverse(self):
     self.left, self.right = self.right, self.left
+  
