@@ -5,7 +5,7 @@ class rdeque(object):
     self.right = right
     self.left = []
 
-  def __len__(self):
+  def len(self):
     return len(self.left) + len(self.right)
 
   def iadd(self, other):
@@ -29,47 +29,50 @@ class rdeque(object):
     self.left += tmp
 
   def pop(self):
-    if len(self.right) < 1:
+    if not self.right:
       mid = len(self.left) + 1 >> 1
       self.right = self.left[:mid]
       self.right.reverse()
       del self.left[:mid]
-    try:
+    if self.right:
       return self.right.pop()
-    except:
-      raise
+    raise IndexError('pop from empty list')
 
   def popleft(self):
-    if len(self.left) < 1:
+    if not self.left:
       mid = len(self.right) + 1 >> 1
       self.left = self.right[:mid]
       self.left.reverse()
       del self.right[:mid]
-    try:
+    if self.left:
       return self.left.pop()
-    except:
-      raise
+    raise IndexError('pop from empty list')
 
   def popn(self, n):
+    if n < 0:
+      raise IndexError('list index out of range')
     i = len(self.right) - n
     if i >= 0:
       result = self.right[i:]
       del self.right[i:]
       return result
     i = -i
-    assert i > 0
-    result = self.left[:i]
-    result.reverse()
-    result += self.right
-    del self.left[:i]
-    self.right = []
-    return result
+    if len(self.left) >= i > 0:
+      result = self.left[:i]
+      result.reverse()
+      result += self.right
+      del self.left[:i]
+      self.right = []
+      return result
+    raise IndexError('list index out of range')
+
+  def reverse(self):
+    self.left, self.right = self.right, self.left
 
   def top(self):
     i = len(self.right) - 1
     if i >= 0:
       return self.right[i]
-    return self.left[0]
-
-  def reverse(self):
-    self.left, self.right = self.right, self.left
+    if self.left:
+      return self.left[0]
+    raise IndexError('list index out of range')
