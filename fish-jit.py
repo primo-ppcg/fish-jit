@@ -52,10 +52,9 @@ def read_unichar():
   return -1
 
 
-def run(program, col_max, row_max, read_func, no_prng):
+def run(program, col_max, row_max, stack, read_func, no_prng):
   pcx, pcy = 0, 0
   dx, dy = 1, 0
-  stack = rdeque([])
   stacks = []
   register = None
   registers = []
@@ -124,7 +123,7 @@ def run(program, col_max, row_max, read_func, no_prng):
             stack.iadd(tmpstack)
             register = registers.pop()
           else:
-            stack = rdeque([])
+            stack = rdeque()
             register = None
         elif code == 108:
           stack.append(rbigfrac.fromint(stack.len()))
@@ -169,7 +168,7 @@ def run(program, col_max, row_max, read_func, no_prng):
         elif code == 46:
           pcy, pcx = stack.pop().toint(), stack.pop().toint()
         elif code == 59:
-          return
+          return stack
         elif code == 63:
           skip = not stack.pop().tobool()
         elif code == 103:
@@ -292,40 +291,51 @@ def main(argv):
       display_help()
       return 1
 
-  if not has_code:
-    try:
-      with open(args[0]) as file:
-        source = file.read()
-    except IndexError:
-      display_usage(argv[0])
-      return 1
-    except IOError:
-      os.write(2, 'File not found: %s\n'%args[0])
-      return 1
-
-  program, col_max, row_max = parse(source)
-
-  try:
-    run(program, col_max, row_max, read_func, no_prng)
-  except:
-    os.write(2, 'something smells fishy...\n')
+  if not has_code and len(args) < 1:
+    display_usage(argv[0])
     return 1
+
+  stack = rdeque()
+
+  if has_code:
+    program, col_max, row_max = parse(source)
+    try:
+      stack = run(program, col_max, row_max, stack, read_func, no_prng)
+    except:
+      os.write(2, 'something smells fishy...\n')
+      return 1
+
+  for arg in args:
+    try:
+      with open(arg) as file:
+        source = file.read()
+    except IOError:
+      os.write(2, 'File not found: %s\n'%arg)
+      return 1
+    program, col_max, row_max = parse(source)
+    try:
+      stack = run(program, col_max, row_max, stack, read_func, no_prng)
+    except:
+      os.write(2, 'something smells fishy...\n')
+      return 1
+
   return 0
 
 
 def display_usage(name):
-  os.write(2, 'Usage: %s [-h] (<file> | -c <code>) [<options>]\n'%name)
+  os.write(2, 'Usage: %s [-h] (-c <code> | <files...>) [<options>]\n'%name)
 
 def display_help():
   os.write(2, '''
 A just-in-time compiling interpreter for the ><> programming language.
 
 Arguments:
-  file            a ><> script file to execute
+  files...        ><> script files to be executed, in order
+                  the current stack will be passed to the next script
 
 Options:
   -c, --code=     a string of instructions to be executed
-                  if present, the file argument will be ignored
+                  if present, will be executed before files
   -u, --utf8      parse input as utf-8
       --no-prng   disable the PRNG (`x` command becomes a no-op)
   -h, --help      display this message

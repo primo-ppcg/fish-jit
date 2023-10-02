@@ -1,8 +1,8 @@
 class rdeque(object):
   __slots__ = ['right', 'left']
 
-  def __init__(self, right):
-    self.right = right
+  def __init__(self, right = []):
+    self.right = right[:]
     self.left = []
 
   def len(self):
