@@ -70,7 +70,7 @@ class rbigfrac(object):
       self.n.mul(other.d).add(self.d.mul(other.n)),
       self.d.mul(other.d)
     )
-    if self.d.size > 1 and other.d.size > 1:
+    if self.d.numdigits() > 1 and other.d.numdigits() > 1:
       ret.normalize()
     return ret
 
@@ -80,7 +80,7 @@ class rbigfrac(object):
       self.n.mul(other.d).sub(self.d.mul(other.n)),
       self.d.mul(other.d)
     )
-    if self.d.size > 1 and other.d.size > 1:
+    if self.d.numdigits() > 1 and other.d.numdigits() > 1:
       ret.normalize()
     return ret
 
@@ -90,20 +90,20 @@ class rbigfrac(object):
       self.n.mul(other.n),
       self.d.mul(other.d)
     )
-    if self.d.size > 1 and other.d.size > 1:
+    if self.d.numdigits() > 1 and other.d.numdigits() > 1:
       ret.normalize()
     return ret
 
   @jit.elidable
   def div(self, other):
-    if other.n.sign == 0: raise ZeroDivisionError
+    if other.n.get_sign() == 0: raise ZeroDivisionError
     num = self.n.mul(other.d)
     den = self.d.mul(other.n)
-    if den.sign == -1:
+    if den.get_sign() == -1:
       num = num.neg()
       den = den.neg()
     ret = rbigfrac(num, den)
-    if self.d.size > 1 and other.n.size > 1:
+    if self.d.numdigits() > 1 and other.n.numdigits() > 1:
       ret.normalize()
     return ret
 
@@ -123,7 +123,7 @@ class rbigfrac(object):
       num.sub(den.mul(quo)),
       self.d.mul(other.d)
     )
-    if self.d.size > 1 and other.d.size > 1:
+    if self.d.numdigits() > 1 and other.d.numdigits() > 1:
       ret.normalize()
     return ret
 
